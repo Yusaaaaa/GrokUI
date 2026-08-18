@@ -28,3 +28,22 @@ pnpm dev
 ```
 
 Then open `http://localhost:1420`.
+
+## Contributors
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/Yusaaaaa">
+        <img src="https://github.com/Yusaaaaa.png?size=120" width="100" alt="Haowei Fan" /><br />
+        <sub><b>Haowei Fan</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://x.ai">
+        <img src="https://github.com/xai-org.png?size=120" width="100" alt="Grok" /><br />
+        <sub><b>Grok</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
