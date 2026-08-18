@@ -28,7 +28,7 @@ export function ChatPane() {
   }, [blocks.length, tick]);
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-bg">
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-transparent">
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
         <MessageList blocks={blocks} busy={busy} />
       </div>

@@ -31,7 +31,7 @@ export function SettingsSheet() {
       onClick={() => setOpen(false)}
     >
       <div
-        className="mt-12 w-[320px] rounded-2xl border border-border bg-elevated p-4 shadow-[var(--shadow)]"
+        className="mt-12 w-[320px] rounded-2xl border border-white/10 bg-[color-mix(in_srgb,var(--bg-elevated)_74%,transparent)] p-4 shadow-[var(--shadow)] backdrop-blur-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">

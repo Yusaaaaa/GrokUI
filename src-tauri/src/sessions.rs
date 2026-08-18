@@ -128,6 +128,86 @@ pub fn load_history(session_id: &str) -> Result<Vec<HistoryBlock>, String> {
     Ok(blocks)
 }
 
+pub fn relocate_sessions(session_ids: &[String], target_cwd: &str) -> Result<(), String> {
+    if target_cwd.trim().is_empty() {
+        return Err("Target directory is missing".into());
+    }
+    let dest_group = sessions_root().join(percent_encode_path(target_cwd));
+    fs::create_dir_all(&dest_group).map_err(|error| error.to_string())?;
+    let _ = fs::write(dest_group.join(".cwd"), target_cwd);
+    for session_id in session_ids {
+        let Some(source) = find_session_dir(session_id) else {
+            continue;
+        };
+        let dest = dest_group.join(session_id);
+        if source == dest {
+            patch_summary_cwd(&dest.join("summary.json"), target_cwd)?;
+            continue;
+        }
+        if dest.exists() {
+            fs::remove_dir_all(&dest).map_err(|error| error.to_string())?;
+        }
+        let parent = source.parent().map(Path::to_path_buf);
+        fs::rename(&source, &dest).map_err(|error| error.to_string())?;
+        patch_summary_cwd(&dest.join("summary.json"), target_cwd)?;
+        if let Some(parent) = parent {
+            maybe_remove_empty_group(&parent);
+        }
+    }
+    Ok(())
+}
+
+fn patch_summary_cwd(path: &Path, cwd: &str) -> Result<(), String> {
+    if !path.is_file() {
+        return Ok(());
+    }
+    let text = fs::read_to_string(path).map_err(|error| error.to_string())?;
+    let mut value: Value =
+        serde_json::from_str(&text).map_err(|error| error.to_string())?;
+    if let Some(info) = value.get_mut("info") {
+        if let Some(object) = info.as_object_mut() {
+            object.insert("cwd".into(), Value::String(cwd.to_string()));
+        }
+    } else if let Some(object) = value.as_object_mut() {
+        object.insert(
+            "info".into(),
+            serde_json::json!({ "cwd": cwd }),
+        );
+    }
+    let next = serde_json::to_string_pretty(&value).map_err(|error| error.to_string())?;
+    fs::write(path, next).map_err(|error| error.to_string())
+}
+
+fn maybe_remove_empty_group(path: &Path) {
+    let Ok(mut entries) = fs::read_dir(path) else {
+        return;
+    };
+    let leftover = entries.any(|entry| {
+        entry
+            .map(|item| {
+                let name = item.file_name();
+                name != ".cwd" && name != ".DS_Store"
+            })
+            .unwrap_or(true)
+    });
+    if !leftover {
+        let _ = fs::remove_dir_all(path);
+    }
+}
+
+fn percent_encode_path(path: &str) -> String {
+    let mut out = String::new();
+    for byte in path.as_bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' => {
+                out.push(*byte as char);
+            }
+            _ => out.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    out
+}
+
 pub fn delete_session(session_id: &str, cli_path: Option<&str>) -> Result<(), String> {
     if let Some(bin) = cli::resolve_binary(cli_path) {
         let status = Command::new(bin)

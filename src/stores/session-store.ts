@@ -3,13 +3,16 @@ import { applySessionUpdate } from "@/lib/acp-reducer";
 import {
   cancelPrompt,
   deleteSession as deleteDiskSession,
+  ensureDir,
   listSessions,
   loadSession,
   newSession,
+  relocateSessions,
   sendPrompt,
   sessionHistory,
   type HistoryBlock,
 } from "@/lib/tauri";
+import { isStandaloneCwd } from "@/lib/paths";
 import type { ChatBlock, PlanStatus, ProjectGroup, SessionSummary, ToolKind, ToolStatus } from "@/lib/types";
 import { useSettingsStore } from "./settings-store";
 
@@ -44,6 +47,7 @@ interface SessionState {
   indexFromDisk: () => Promise<void>;
   openSession: (id: string) => Promise<void>;
   removeSession: (id: string) => Promise<void>;
+  removeProject: (cwd: string, mode: "move" | "delete") => Promise<void>;
 }
 
 function projectName(cwd: string): string {
@@ -192,9 +196,15 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   },
   createSession: async (cwd) => {
     const settings = useSettingsStore.getState();
-    const target = cwd ?? settings.lastCwd;
+    const target = cwd ?? settings.standaloneDir;
     if (!target) {
       set({ error: "Pick a project folder first." });
+      return;
+    }
+    try {
+      await ensureDir(target);
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
       return;
     }
     set({ connecting: true, error: null });
@@ -205,7 +215,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         settings.model,
       );
       const id = created.sessionId;
-      settings.setLastCwd(target);
+      if (!isStandaloneCwd(target)) settings.setLastCwd(target);
       if (created.models?.availableModels?.length) {
         settings.setModels(created.models.availableModels.map((item) => item.modelId));
       }
@@ -321,6 +331,50 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           ? (projects[0]?.sessions[0]?.id ?? "")
           : state.activeSessionId;
       return { projects, transcripts, loadedOnAgent, activeSessionId };
+    });
+  },
+  removeProject: async (cwd, mode) => {
+    const project = get().projects.find((item) => item.cwd === cwd);
+    if (!project) return;
+    const settings = useSettingsStore.getState();
+    if (mode === "delete") {
+      for (const session of project.sessions) {
+        await get().removeSession(session.id);
+      }
+      return;
+    }
+    const target = settings.standaloneDir;
+    await ensureDir(target);
+    await relocateSessions(
+      project.sessions.map((session) => session.id),
+      target,
+    );
+    const movedIds = new Set(project.sessions.map((session) => session.id));
+    set((state) => {
+      const leftover = state.projects.filter((item) => item.cwd !== cwd);
+      const chats =
+        leftover.find((item) => isStandaloneCwd(item.cwd)) ?? {
+          id: target,
+          name: projectName(target),
+          cwd: target,
+          sessions: [],
+        };
+      const others = leftover.filter((item) => item.cwd !== chats.cwd);
+      const relocated = project.sessions.map((session) => ({
+        ...session,
+        cwd: target,
+      }));
+      const nextChats = {
+        ...chats,
+        sessions: [...relocated, ...chats.sessions.filter((session) => !movedIds.has(session.id))],
+      };
+      const loadedOnAgent = { ...state.loadedOnAgent };
+      for (const id of movedIds) delete loadedOnAgent[id];
+      if (settings.lastCwd === cwd) settings.setLastCwd(target);
+      return {
+        projects: [nextChats, ...others],
+        loadedOnAgent,
+      };
     });
   },
 }));

@@ -7,17 +7,28 @@ use std::process::Command;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AccountProfile {
+    pub display_name: Option<String>,
+    pub email: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CliStatus {
     pub installed: bool,
     pub logged_in: bool,
     pub path: Option<String>,
     pub version: Option<String>,
     pub default_cwd: String,
+    pub standalone_dir: String,
+    pub account: Option<AccountProfile>,
     pub message: String,
 }
 
 pub fn probe(preferred: Option<&str>) -> CliStatus {
     let default_cwd = default_cwd();
+    let standalone_dir = standalone_dir();
+    let account = account_profile();
     let Some(path) = resolve_binary(preferred) else {
         return CliStatus {
             installed: false,
@@ -25,6 +36,8 @@ pub fn probe(preferred: Option<&str>) -> CliStatus {
             path: None,
             version: None,
             default_cwd,
+            standalone_dir,
+            account,
             message: "Grok CLI was not found".into(),
         };
     };
@@ -37,12 +50,66 @@ pub fn probe(preferred: Option<&str>) -> CliStatus {
         path: Some(path.to_string_lossy().into_owned()),
         version,
         default_cwd,
+        standalone_dir,
+        account,
         message: if logged_in {
             "Ready".into()
         } else {
             "Grok CLI is installed but you are not signed in".into()
         },
     }
+}
+
+pub fn standalone_dir() -> String {
+    home_dir()
+        .map(|home| home.join("Documents").join("Grok Build").join("Chats"))
+        .unwrap_or_else(|| PathBuf::from("/tmp/Grok Build/Chats"))
+        .to_string_lossy()
+        .into_owned()
+}
+
+pub fn ensure_dir(path: &str) -> Result<String, String> {
+    fs::create_dir_all(path).map_err(|error| error.to_string())?;
+    Ok(path.to_string())
+}
+
+fn home_dir() -> Option<PathBuf> {
+    env::var_os("HOME").map(PathBuf::from)
+}
+
+fn account_profile() -> Option<AccountProfile> {
+    let path = env::var_os("GROK_HOME")
+        .map(PathBuf::from)
+        .or_else(|| home_dir().map(|home| home.join(".grok")))?
+        .join("auth.json");
+    let text = fs::read_to_string(path).ok()?;
+    let value: serde_json::Value = serde_json::from_str(&text).ok()?;
+    let records = value.as_object()?;
+    for record in records.values() {
+        let Some(obj) = record.as_object() else {
+            continue;
+        };
+        let email = obj
+            .get("email")
+            .and_then(|item| item.as_str())
+            .map(str::to_string);
+        let first = obj
+            .get("first_name")
+            .and_then(|item| item.as_str())
+            .unwrap_or("");
+        let last = obj
+            .get("last_name")
+            .and_then(|item| item.as_str())
+            .unwrap_or("");
+        let name = format!("{first} {last}").trim().to_string();
+        if email.is_some() || !name.is_empty() {
+            return Some(AccountProfile {
+                display_name: if name.is_empty() { None } else { Some(name) },
+                email,
+            });
+        }
+    }
+    None
 }
 
 pub fn start_login(preferred: Option<&str>) -> Result<String, String> {

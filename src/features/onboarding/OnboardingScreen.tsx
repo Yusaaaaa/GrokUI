@@ -61,7 +61,11 @@ export function OnboardingScreen({ status, onRefresh }: OnboardingScreenProps) {
 
   return (
     <div className="relative flex h-full items-center justify-center bg-bg text-fg">
-      <div className="absolute inset-x-0 top-0 h-11" onMouseDown={startWindowDrag} />
+      <div
+        className="absolute inset-x-0 top-0 h-11 pl-[78px]"
+        data-tauri-drag-region
+        onMouseDown={startWindowDrag}
+      />
       <div
         data-tauri-drag-region="false"
         className="w-[440px] rounded-2xl border border-border bg-elevated p-6 shadow-[var(--shadow)]"

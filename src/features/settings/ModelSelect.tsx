@@ -13,7 +13,7 @@ export function ModelSelect() {
         value={model}
         onChange={(event) => setModel(event.target.value)}
         data-tauri-drag-region="false"
-        className="h-8 appearance-none rounded-lg border border-border bg-elevated py-0 pl-2.5 pr-7 text-[12px] text-fg outline-none"
+        className="h-8 appearance-none rounded-lg border border-white/10 bg-white/5 py-0 pl-2.5 pr-7 text-[12px] text-fg outline-none backdrop-blur-md"
       >
         {options.map((item) => (
           <option key={item} value={item}>

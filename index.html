@@ -5,22 +5,8 @@
     <link rel="icon" type="image/svg+xml" href="/tauri.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Grok Build</title>
-    <style>
-      html, body, #root { height: 100%; margin: 0; }
-      #native-drag {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 44px;
-        z-index: 2147483647;
-        -webkit-app-region: drag;
-        app-region: drag;
-      }
-    </style>
   </head>
   <body>
-    <div id="native-drag" data-tauri-drag-region></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

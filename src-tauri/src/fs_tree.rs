@@ -89,6 +89,9 @@ pub fn preview(path: &str) -> Result<FilePreview, String> {
         .unwrap_or("")
         .to_ascii_lowercase();
 
+    if ext == "pdf" {
+        return preview_pdf(&file, path, &name);
+    }
     if is_image(&ext) {
         return preview_image(&file, path, &name, &ext);
     }
@@ -114,6 +117,27 @@ pub fn preview(path: &str) -> Result<FilePreview, String> {
         kind: "binary".into(),
         content: None,
         mime: None,
+    })
+}
+
+fn preview_pdf(file: &Path, path: &str, name: &str) -> Result<FilePreview, String> {
+    let meta = fs::metadata(file).map_err(|error| error.to_string())?;
+    if meta.len() > 12_000_000 {
+        return Ok(FilePreview {
+            path: path.into(),
+            name: name.into(),
+            kind: "binary".into(),
+            content: None,
+            mime: Some("application/pdf".into()),
+        });
+    }
+    let bytes = fs::read(file).map_err(|error| error.to_string())?;
+    Ok(FilePreview {
+        path: path.into(),
+        name: name.into(),
+        kind: "pdf".into(),
+        content: Some(data_url("application/pdf", &bytes)),
+        mime: Some("application/pdf".into()),
     })
 }
 

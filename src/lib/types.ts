@@ -1,4 +1,4 @@
-export type PermissionMode = "ask" | "always";
+export type PermissionMode = "ask" | "plan" | "auto" | "always";
 
 export type ToolKind = "read" | "edit" | "execute" | "search";
 

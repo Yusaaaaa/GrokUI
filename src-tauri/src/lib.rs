@@ -144,6 +144,11 @@ fn delete_session(session_id: String, cli_path: Option<String>) -> Result<(), St
 }
 
 #[tauri::command]
+fn relocate_sessions(session_ids: Vec<String>, target_cwd: String) -> Result<(), String> {
+    sessions::relocate_sessions(&session_ids, &target_cwd)
+}
+
+#[tauri::command]
 fn list_dir(path: String) -> Result<Vec<fs_tree::FsEntry>, String> {
     fs_tree::list_dir(&path)
 }
@@ -165,6 +170,11 @@ fn watch_dir(
 #[tauri::command]
 fn month_usage(year: Option<i32>, month: Option<u32>) -> Result<usage::MonthUsage, String> {
     usage::month_usage(year, month)
+}
+
+#[tauri::command]
+fn ensure_dir(path: String) -> Result<String, String> {
+    cli::ensure_dir(&path)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -196,10 +206,12 @@ pub fn run() {
             list_sessions,
             session_history,
             delete_session,
+            relocate_sessions,
             list_dir,
             preview_file,
             watch_dir,
             month_usage,
+            ensure_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

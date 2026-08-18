@@ -3,7 +3,7 @@ import { translate } from "@/lib/i18n";
 import { monthUsage, onTurnEnd, type MonthUsage } from "@/lib/tauri";
 import { useSettingsStore } from "@/stores/settings-store";
 
-export function TokenUsage() {
+export function TokenUsage({ compact = false }: { compact?: boolean }) {
   const locale = useSettingsStore((state) => state.locale);
   const [data, setData] = useState<MonthUsage | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,8 +37,8 @@ export function TokenUsage() {
   const today = todayDay(data?.year, data?.month);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col border-t border-border">
-      <div className="px-3 py-2">
+    <div className={compact ? "flex flex-col" : "flex min-h-0 flex-1 flex-col border-t border-border"}>
+      <div className={compact ? "pb-1" : "px-3 py-2"}>
         <div className="text-[11px] uppercase tracking-[0.06em] text-subtle">
           {translate(locale, "usage.title")}
         </div>
@@ -57,7 +57,7 @@ export function TokenUsage() {
           </div>
         ) : null}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+      <div className={compact ? "max-h-48 overflow-y-auto" : "min-h-0 flex-1 overflow-y-auto px-3 pb-3"}>
         {error ? <p className="text-[12px] text-exec">{error}</p> : null}
         {!data && !error ? (
           <p className="text-[12px] text-subtle">{translate(locale, "usage.loading")}</p>

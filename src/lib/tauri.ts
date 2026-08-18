@@ -7,12 +7,19 @@ export interface AppInfo {
   phase: string;
 }
 
+export interface AccountProfile {
+  displayName?: string | null;
+  email?: string | null;
+}
+
 export interface CliStatus {
   installed: boolean;
   loggedIn: boolean;
   path: string | null;
   version: string | null;
   defaultCwd: string;
+  standaloneDir?: string;
+  account?: AccountProfile | null;
   message: string;
 }
 
@@ -62,6 +69,10 @@ export async function cliStatus(cliPath?: string | null): Promise<CliStatus> {
 
 export async function startLogin(cliPath?: string | null): Promise<string> {
   return invoke<string>("start_login", { cliPath: cliPath || null });
+}
+
+export async function ensureDir(path: string): Promise<string> {
+  return invoke<string>("ensure_dir", { path });
 }
 
 export async function startAgent(
@@ -134,7 +145,7 @@ export interface FsEntry {
 export interface FilePreviewData {
   path: string;
   name: string;
-  kind: "text" | "image" | "binary";
+  kind: "text" | "image" | "binary" | "pdf";
   content: string | null;
   mime: string | null;
 }
@@ -152,6 +163,13 @@ export async function deleteSession(
   cliPath?: string | null,
 ): Promise<void> {
   await invoke("delete_session", { sessionId, cliPath: cliPath || null });
+}
+
+export async function relocateSessions(
+  sessionIds: string[],
+  targetCwd: string,
+): Promise<void> {
+  await invoke("relocate_sessions", { sessionIds, targetCwd });
 }
 
 export async function loadSession(

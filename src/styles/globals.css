@@ -23,7 +23,8 @@
   --exec: #b4532a;
   --search: #6d56a8;
   --ring: rgba(28, 25, 22, 0.18);
-  --shadow: 0 10px 30px rgba(28, 25, 22, 0.08);
+  --shadow: 0 18px 50px rgba(28, 25, 22, 0.1), 0 1px 2px rgba(28, 25, 22, 0.04);
+  --glass: color-mix(in srgb, var(--bg-elevated) 68%, transparent);
   color-scheme: light;
 }
 
@@ -48,7 +49,8 @@
   --exec: #d48968;
   --search: #b09ad6;
   --ring: rgba(236, 234, 230, 0.16);
-  --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  --shadow: 0 22px 56px rgba(0, 0, 0, 0.42);
+  --glass: color-mix(in srgb, var(--bg-elevated) 62%, transparent);
   color-scheme: dark;
 }
 
@@ -85,7 +87,10 @@ body,
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(1100px 640px at 8% -12%, color-mix(in srgb, var(--ok) 16%, transparent), transparent 52%),
+    radial-gradient(900px 520px at 108% 0%, color-mix(in srgb, var(--search) 18%, transparent), transparent 48%),
+    var(--bg);
   color: var(--fg);
   font-family: var(--font-sans);
   font-size: 14px;

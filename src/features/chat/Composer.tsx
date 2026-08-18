@@ -3,6 +3,8 @@ import { Square } from "lucide-react";
 import { ArrowUp, ImagePlus, Paperclip, X } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
+import { ModeSelect } from "@/features/settings/ModeSelect";
+import { ModelSelect } from "@/features/settings/ModelSelect";
 import { translate } from "@/lib/i18n";
 import { isTauri } from "@/lib/tauri";
 import {
@@ -51,7 +53,7 @@ export function Composer() {
 
   return (
     <div className="mx-auto w-full max-w-[760px] px-6 pb-5">
-      <div className="rounded-2xl border border-border bg-composer shadow-[var(--shadow)]">
+      <div className="rounded-2xl border border-white/10 bg-[color-mix(in_srgb,var(--bg-composer)_72%,transparent)] shadow-[var(--shadow)] backdrop-blur-2xl">
         {files.length > 0 ? (
           <div className="flex flex-wrap gap-1.5 border-b border-border px-3 py-2">
             {files.map((name) => (
@@ -95,15 +97,18 @@ export function Composer() {
           placeholder={t("composer.placeholder")}
           className="block max-h-40 min-h-[72px] w-full bg-transparent px-4 pt-3 text-[14px] text-fg outline-none placeholder:text-subtle"
         />
-        <div className="flex items-center justify-between px-2 pb-2">
-          <div className="flex items-center gap-0.5">
+        <div className="flex items-center justify-between gap-2 px-2 pb-2">
+          <div className="flex min-w-0 items-center gap-1">
             <Button variant="icon" title={t("composer.attach")} onClick={() => void pick("file")}>
               <Paperclip className="size-4" />
             </Button>
             <Button variant="icon" title={t("composer.image")} onClick={() => void pick("image")}>
               <ImagePlus className="size-4" />
             </Button>
+            <ModeSelect />
           </div>
+          <div className="flex items-center gap-1.5">
+            <ModelSelect />
           {busy ? (
             <button
               type="button"
@@ -124,6 +129,7 @@ export function Composer() {
               <ArrowUp className="size-4" />
             </button>
           )}
+          </div>
         </div>
       </div>
       <p className="mt-2 text-center text-[11px] text-subtle">{t("composer.hint")}</p>

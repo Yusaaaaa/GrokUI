@@ -94,6 +94,7 @@ async function connectOnce(forceOnboarding: boolean) {
   try {
     const status = await cliStatus(settings.cliPath || null);
     setCli(status);
+    if (status.standaloneDir) settings.setStandaloneDir(status.standaloneDir);
     if (!status.installed || !status.loggedIn || forceOnboarding) {
       setScreen("onboarding");
       return;
@@ -127,6 +128,7 @@ export async function reconnect() {
   try {
     const status = await cliStatus(settings.cliPath || null);
     setCli(status);
+    if (status.standaloneDir) settings.setStandaloneDir(status.standaloneDir);
     if (!status.installed || !status.loggedIn) {
       setScreen("onboarding");
       return;
