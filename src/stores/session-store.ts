@@ -18,6 +18,26 @@ import { useSettingsStore } from "./settings-store";
 
 const EMPTY_FILES: string[] = [];
 const EMPTY_BLOCKS: ChatBlock[] = [];
+let openGeneration = 0;
+const prefetching = new Set<string>();
+let agentLoad: Promise<void> = Promise.resolve();
+
+function enqueueAgentLoad(id: string, cwd: string, yolo: boolean) {
+  agentLoad = agentLoad
+    .then(async () => {
+      if (useSessionStore.getState().loadedOnAgent[id]) return;
+      await loadSession(id, cwd, yolo);
+      useSessionStore.setState((state) => ({
+        loadedOnAgent: { ...state.loadedOnAgent, [id]: true },
+      }));
+    })
+    .catch((error: unknown) => {
+      if (useSessionStore.getState().activeSessionId !== id) return;
+      useSessionStore.setState({
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+}
 
 interface SessionState {
   projects: ProjectGroup[];
@@ -29,6 +49,7 @@ interface SessionState {
   query: string;
   streamTick: number;
   connecting: boolean;
+  loadingHistory: boolean;
   error: string | null;
   setQuery: (query: string) => void;
   selectSession: (id: string) => void;
@@ -46,6 +67,7 @@ interface SessionState {
   hydrateFromDisk: () => Promise<void>;
   indexFromDisk: () => Promise<void>;
   openSession: (id: string) => Promise<void>;
+  prefetchSession: (id: string) => void;
   removeSession: (id: string) => Promise<void>;
   removeProject: (cwd: string, mode: "move" | "delete") => Promise<void>;
 }
@@ -79,6 +101,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   query: "",
   streamTick: 0,
   connecting: false,
+  loadingHistory: false,
   error: null,
   loadedOnAgent: {},
   setQuery: (query) => set({ query }),
@@ -282,35 +305,61 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   openSession: async (id) => {
     const existing = findSession(get().projects, id);
     if (!existing) {
-      set({ activeSessionId: id });
+      set({ activeSessionId: id, loadingHistory: false });
       return;
     }
-    set({ connecting: true, error: null, activeSessionId: id });
+    const token = ++openGeneration;
+    const hasHistory = Boolean(get().transcripts[id]);
+    set({
+      activeSessionId: id,
+      error: null,
+      loadingHistory: !hasHistory,
+    });
     const settings = useSettingsStore.getState();
-    settings.setLastCwd(existing.cwd);
+    if (!isStandaloneCwd(existing.cwd)) settings.setLastCwd(existing.cwd);
     try {
-      if (!get().transcripts[id]) {
+      if (!hasHistory) {
         const history = await sessionHistory(id);
+        if (openGeneration !== token) return;
         set((state) => ({
           transcripts: {
             ...state.transcripts,
             [id]: history.map(historyToBlock),
           },
+          loadingHistory: state.activeSessionId === id ? false : state.loadingHistory,
+          streamTick: state.streamTick + 1,
         }));
       }
       if (!get().loadedOnAgent[id]) {
-        await loadSession(id, existing.cwd, settings.permissionMode === "always");
-        set((state) => ({
-          loadedOnAgent: { ...state.loadedOnAgent, [id]: true },
-        }));
+        void enqueueAgentLoad(id, existing.cwd, settings.permissionMode === "always");
       }
-      set({ connecting: false, activeSessionId: id, streamTick: get().streamTick + 1 });
     } catch (error) {
+      if (openGeneration !== token) return;
       set({
-        connecting: false,
+        loadingHistory: false,
         error: error instanceof Error ? error.message : String(error),
       });
     }
+  },
+  prefetchSession: (id) => {
+    if (!id || get().transcripts[id] || prefetching.has(id)) return;
+    prefetching.add(id);
+    void sessionHistory(id)
+      .then((history) => {
+        set((state) => {
+          if (state.transcripts[id]) return state;
+          return {
+            transcripts: {
+              ...state.transcripts,
+              [id]: history.map(historyToBlock),
+            },
+          };
+        });
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        prefetching.delete(id);
+      });
   },
   removeSession: async (id) => {
     const settings = useSettingsStore.getState();

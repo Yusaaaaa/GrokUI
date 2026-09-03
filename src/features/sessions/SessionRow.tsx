@@ -9,9 +9,10 @@ interface SessionRowProps {
   active: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  onPrefetch?: () => void;
 }
 
-export function SessionRow({ session, active, onSelect, onDelete }: SessionRowProps) {
+export function SessionRow({ session, active, onSelect, onDelete, onPrefetch }: SessionRowProps) {
   const locale = useSettingsStore((state) => state.locale);
   const when = formatWhen(session.updatedAt, locale);
 
@@ -22,7 +23,13 @@ export function SessionRow({ session, active, onSelect, onDelete }: SessionRowPr
         active ? "bg-active" : "hover:bg-hover",
       )}
     >
-      <button type="button" onClick={onSelect} className="min-w-0 flex-1 px-2.5 py-2">
+      <button
+        type="button"
+        onClick={onSelect}
+        onMouseEnter={onPrefetch}
+        onFocus={onPrefetch}
+        className="min-w-0 flex-1 px-2.5 py-2"
+      >
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[13px] text-fg">{session.title}</span>
           <span className="shrink-0 text-[11px] text-subtle">{when}</span>

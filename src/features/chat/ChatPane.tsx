@@ -16,6 +16,9 @@ export function ChatPane() {
   const tick = useSessionStore((state) => state.streamTick);
   const error = useSessionStore((state) => state.error);
   const connecting = useSessionStore((state) => state.connecting);
+  const loadingHistory = useSessionStore((state) => state.loadingHistory);
+  const sessionId = useSessionStore((state) => state.activeSessionId);
+  const agentReady = useSessionStore((state) => Boolean(state.loadedOnAgent[state.activeSessionId]));
   const busy = useActiveBusy();
   const agentState = useAppStore((state) => state.agentState);
   const locale = useSettingsStore((state) => state.locale);
@@ -30,7 +33,7 @@ export function ChatPane() {
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-transparent">
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
-        <MessageList blocks={blocks} busy={busy} />
+        <MessageList key={sessionId} blocks={blocks} busy={busy} loading={loadingHistory} />
       </div>
       {agentState === "disconnected" ? (
         <div className="flex items-center justify-center gap-3 px-6 pb-2 text-[12px] text-exec">
@@ -46,6 +49,10 @@ export function ChatPane() {
       ) : connecting || agentState === "connecting" ? (
         <p className="px-6 pb-2 text-center text-[12px] text-muted">
           {translate(locale, "chat.connecting")}
+        </p>
+      ) : sessionId && !agentReady ? (
+        <p className="px-6 pb-2 text-center text-[12px] text-muted">
+          {translate(locale, "chat.loadingSession")}
         </p>
       ) : null}
       {error ? (

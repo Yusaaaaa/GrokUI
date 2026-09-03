@@ -20,6 +20,7 @@ export function Sidebar() {
   const query = useSessionStore((state) => state.query);
   const setQuery = useSessionStore((state) => state.setQuery);
   const openSession = useSessionStore((state) => state.openSession);
+  const prefetchSession = useSessionStore((state) => state.prefetchSession);
   const createSession = useSessionStore((state) => state.createSession);
   const openProject = useSessionStore((state) => state.openProject);
   const removeSession = useSessionStore((state) => state.removeSession);
@@ -114,6 +115,7 @@ export function Sidebar() {
               project={project}
               activeSessionId={activeSessionId}
               onSelect={(id) => void openSession(id)}
+              onPrefetch={(id) => prefetchSession(id)}
               onDelete={(id) => void onDelete(id)}
               forceOpen={Boolean(needle)}
               onNew={() => void createSession(project.cwd)}
@@ -135,6 +137,7 @@ export function Sidebar() {
                 session={session}
                 active={session.id === activeSessionId}
                 onSelect={() => void openSession(session.id)}
+                onPrefetch={() => prefetchSession(session.id)}
                 onDelete={() => void onDelete(session.id)}
               />
             ))}

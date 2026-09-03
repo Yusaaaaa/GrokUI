@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { ThoughtBlock } from "./ThoughtBlock";
 import { ToolCard } from "./ToolCard";
 import { PlanBlock } from "./PlanBlock";
@@ -6,13 +7,33 @@ import { translate } from "@/lib/i18n";
 import type { ChatBlock } from "@/lib/types";
 import { useSettingsStore } from "@/stores/settings-store";
 
+const INITIAL_VISIBLE = 48;
+
 interface MessageListProps {
   blocks: ChatBlock[];
   busy?: boolean;
+  loading?: boolean;
 }
 
-export function MessageList({ blocks, busy = false }: MessageListProps) {
+export function MessageList({ blocks, busy = false, loading = false }: MessageListProps) {
   const locale = useSettingsStore((state) => state.locale);
+  const [showAll, setShowAll] = useState(false);
+  const lastThoughtId = useMemo(() => {
+    for (let i = blocks.length - 1; i >= 0; i -= 1) {
+      if (blocks[i].type === "thought") return blocks[i].id;
+    }
+    return null;
+  }, [blocks]);
+  const hidden = !showAll && blocks.length > INITIAL_VISIBLE ? blocks.length - INITIAL_VISIBLE : 0;
+  const visible = hidden > 0 ? blocks.slice(hidden) : blocks;
+
+  if (loading && blocks.length === 0) {
+    return (
+      <div className="mx-auto flex max-w-xl flex-1 flex-col items-center justify-center px-6 text-center">
+        <p className="text-[14px] text-muted">{translate(locale, "chat.loadingHistory")}</p>
+      </div>
+    );
+  }
 
   if (blocks.length === 0) {
     return (
@@ -32,7 +53,16 @@ export function MessageList({ blocks, busy = false }: MessageListProps) {
 
   return (
     <div className="mx-auto flex w-full max-w-[760px] flex-col gap-3 px-6 py-6">
-      {blocks.map((block) => {
+      {hidden > 0 ? (
+        <button
+          type="button"
+          className="self-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[12px] text-muted hover:text-fg"
+          onClick={() => setShowAll(true)}
+        >
+          {translate(locale, "chat.showEarlier")}
+        </button>
+      ) : null}
+      {visible.map((block) => {
         if (block.type === "user") {
           return (
             <div key={block.id} className="flex justify-end">
@@ -43,12 +73,11 @@ export function MessageList({ blocks, busy = false }: MessageListProps) {
           );
         }
         if (block.type === "thought" && block.text) {
-          const lastThought = [...blocks].reverse().find((item) => item.type === "thought");
           return (
             <ThoughtBlock
               key={block.id}
               text={block.text}
-              live={busy && lastThought?.id === block.id}
+              live={busy && lastThoughtId === block.id}
             />
           );
         }

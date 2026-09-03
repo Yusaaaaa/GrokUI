@@ -9,6 +9,7 @@ interface ProjectGroupProps {
   activeSessionId: string;
   forceOpen?: boolean;
   onSelect: (id: string) => void;
+  onPrefetch?: (id: string) => void;
   onDelete: (id: string) => void;
   onNew?: () => void;
   onRemove?: () => void;
@@ -19,6 +20,7 @@ export function ProjectGroup({
   activeSessionId,
   forceOpen = false,
   onSelect,
+  onPrefetch,
   onDelete,
   onNew,
   onRemove,
@@ -77,6 +79,7 @@ export function ProjectGroup({
               session={session}
               active={session.id === activeSessionId}
               onSelect={() => onSelect(session.id)}
+              onPrefetch={onPrefetch ? () => onPrefetch(session.id) : undefined}
               onDelete={() => onDelete(session.id)}
             />
           ))}

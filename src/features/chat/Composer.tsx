@@ -33,6 +33,7 @@ export function Composer() {
   const addAttachment = useSessionStore((state) => state.addAttachment);
   const removeAttachment = useSessionStore((state) => state.removeAttachment);
   const connecting = useSessionStore((state) => state.connecting);
+  const agentReady = useSessionStore((state) => Boolean(state.loadedOnAgent[state.activeSessionId]));
   const busy = useActiveBusy();
 
   async function pick(kind: "file" | "image") {
@@ -49,7 +50,11 @@ export function Composer() {
     for (const path of paths) addAttachment(path);
   }
 
-  const canSend = Boolean(sessionId) && !connecting && (!!draft.trim() || files.length > 0);
+  const canSend =
+    Boolean(sessionId) &&
+    !connecting &&
+    agentReady &&
+    (!!draft.trim() || files.length > 0);
 
   return (
     <div className="mx-auto w-full max-w-[760px] px-6 pb-5">

@@ -1,9 +1,10 @@
+import { memo } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { isTauri } from "@/lib/tauri";
 
-export function MarkdownBody({ text }: { text: string }) {
+export const MarkdownBody = memo(function MarkdownBody({ text }: { text: string }) {
   return (
     <article className="markdown-body text-[14.5px] leading-7 text-fg">
       <Markdown
@@ -27,7 +28,7 @@ export function MarkdownBody({ text }: { text: string }) {
       </Markdown>
     </article>
   );
-}
+});
 
 async function openLink(href: string) {
   if (isTauri()) {

@@ -121,8 +121,8 @@ pub fn load_history(session_id: &str) -> Result<Vec<HistoryBlock>, String> {
             .unwrap_or(value);
         apply_history(&mut blocks, &mut index, &update);
     }
-    if blocks.len() > 800 {
-        let skip = blocks.len() - 800;
+    if blocks.len() > 240 {
+        let skip = blocks.len() - 240;
         blocks = blocks.split_off(skip);
     }
     Ok(blocks)

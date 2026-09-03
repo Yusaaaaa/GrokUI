@@ -119,13 +119,16 @@ fn resolve_permission(
 }
 
 #[tauri::command]
-fn load_session(
-    state: State<AppState>,
+async fn load_session(
+    state: State<'_, AppState>,
     session_id: String,
     cwd: String,
     yolo: bool,
 ) -> Result<Value, String> {
-    agent_of(&state)?.load_session(&session_id, &cwd, yolo)
+    let agent = agent_of(&state)?;
+    tauri::async_runtime::spawn_blocking(move || agent.load_session(&session_id, &cwd, yolo))
+        .await
+        .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -134,8 +137,10 @@ fn list_sessions() -> Result<Vec<sessions::DiskSession>, String> {
 }
 
 #[tauri::command]
-fn session_history(session_id: String) -> Result<Vec<sessions::HistoryBlock>, String> {
-    sessions::load_history(&session_id)
+async fn session_history(session_id: String) -> Result<Vec<sessions::HistoryBlock>, String> {
+    tauri::async_runtime::spawn_blocking(move || sessions::load_history(&session_id))
+        .await
+        .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]

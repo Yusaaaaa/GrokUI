@@ -141,6 +141,11 @@ textarea {
   app-region: no-drag;
 }
 
+.markdown-body {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 240px;
+}
+
 .markdown-body > :first-child {
   margin-top: 0;
 }
